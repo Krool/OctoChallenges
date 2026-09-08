@@ -1,0 +1,10 @@
+{
+  "name": "octochallenges-tests",
+  "private": true,
+  "scripts": {
+    "test": "node run.js"
+  },
+  "devDependencies": {
+    "luaparse": "^0.3.1"
+  }
+}
