@@ -192,6 +192,7 @@ end
 -- ------------------------------------------------------------ protocol ------
 
 local settledNoAnswer = false
+local sentAny = false -- at least one request actually left this session
 
 local timer = CreateFrame("Frame")
 timer.elapsed = 0
@@ -213,6 +214,14 @@ timer:SetScript("OnUpdate", function()
 		-- character select stops showing stale/baked icons. Only when
 		-- nothing was ever cached; an existing mask is kept untouched
 		-- (a flood-dropped reply must not wipe real data).
+		-- silence only means "no challenges" if a request actually went out
+		-- (no guid / no send = no evidence; never cache mask 0 from that)
+		if not sentAny then
+			if not (OctoChallengesDB and OctoChallengesDB.mask) then
+				DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99OctoChallenges|r: could not query (no player guid from UnitExists - Turtle client extension missing?).")
+			end
+			return
+		end
 		if not settledNoAnswer then
 			settledNoAnswer = true
 			if not (OctoChallengesDB and OctoChallengesDB.mask) then
@@ -228,6 +237,7 @@ timer:SetScript("OnUpdate", function()
 	local guid = GetPlayerGuid()
 	if guid then
 		SendAddonMessage("TW_UI", "REQUEST_PLAYER_CHALLENGES;" .. guid, "GUILD")
+		sentAny = true
 	end
 end)
 
@@ -265,6 +275,7 @@ handler:SetScript("OnEvent", function()
 		local _, _, guid, mask = string.find(arg2 or "", "^(.+):(%d*)$")
 		if guid and guid == GetPlayerGuid() then
 			gotResponse = true
+			settledNoAnswer = false -- a real answer un-settles the silence latch
 			if not OctoChallengesDB then OctoChallengesDB = {} end
 			local old = OctoChallengesDB.mask
 			OctoChallengesDB.mask = tonumber(mask) or 0
@@ -285,12 +296,14 @@ handler:SetScript("OnEvent", function()
 end)
 
 -- Re-query when the paperdoll opens if the login-time request never answered.
-local origPaperDollOnShow = PaperDollFrame:GetScript("OnShow")
-PaperDollFrame:SetScript("OnShow", function()
-	if origPaperDollOnShow then origPaperDollOnShow() end
-	if not gotResponse then AutoRequestChallenges() end
-	Render()
-end)
+local origPaperDollOnShow = PaperDollFrame and PaperDollFrame:GetScript("OnShow")
+if PaperDollFrame then
+	PaperDollFrame:SetScript("OnShow", function()
+		if origPaperDollOnShow then pcall(origPaperDollOnShow) end
+		if not gotResponse then AutoRequestChallenges() end
+		Render()
+	end)
+end
 
 -- ---------------------------------------------------------------- slash -----
 
