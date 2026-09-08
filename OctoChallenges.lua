@@ -193,6 +193,7 @@ end
 
 local settledNoAnswer = false
 local sentAny = false -- at least one request actually left this session
+local warnedNoGuid = false
 
 local timer = CreateFrame("Frame")
 timer.elapsed = 0
@@ -217,7 +218,8 @@ timer:SetScript("OnUpdate", function()
 		-- silence only means "no challenges" if a request actually went out
 		-- (no guid / no send = no evidence; never cache mask 0 from that)
 		if not sentAny then
-			if not (OctoChallengesDB and OctoChallengesDB.mask) then
+			if not warnedNoGuid and not (OctoChallengesDB and OctoChallengesDB.mask) then
+				warnedNoGuid = true
 				DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99OctoChallenges|r: could not query (no player guid from UnitExists - Turtle client extension missing?).")
 			end
 			return
