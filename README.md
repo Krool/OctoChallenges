@@ -40,3 +40,12 @@ needs the companion client mod,
 server-status lamp, and a music toggle to the login screen. See that repo's
 README for how to install it. Without it, this addon still works fully on
 the in-game character sheet — you just don't get the character-select icons.
+
+## Development
+
+`cd tools/test && npm install && npm test` syntax-checks every Lua file and
+runs the 1.12 API allowlist lint (`api-lint.js`): any global call, CVar name
+or event name that does not exist on the 1.12 client fails the run. The
+allowlist is built from WoW.exe's identifier strings plus the shipped
+FrameXML, so it knows OctoWoW's server-side UI globals too. GitHub Actions
+runs the same on every push.
